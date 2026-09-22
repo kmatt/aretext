@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -412,6 +413,14 @@ func TestRunShellCmdWorkingDirMenu(t *testing.T) {
 }
 
 func setupShellCmdTest(t *testing.T, f func(*EditorState, string)) {
+	if runtime.GOOS == "windows" {
+		// These tests drive the editor's shell integration with POSIX commands
+		// (printf, printenv, and output redirection), which do not translate to
+		// PowerShell. Porting them would test the shell rather than the editor,
+		// so skip instead.
+		t.Skip("Shell command tests require a POSIX shell")
+	}
+
 	oldShellEnv := os.Getenv("SHELL")
 	defer os.Setenv("SHELL", oldShellEnv)
 	os.Setenv("SHELL", "")

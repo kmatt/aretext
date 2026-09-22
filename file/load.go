@@ -12,26 +12,28 @@ import (
 
 // Load reads a file from disk and starts a watcher to detect changes.
 // This will remove the POSIX end-of-file indicator (line feed at end of file).
-func Load(path string, watcherPollInterval time.Duration) (*text.Tree, *Watcher, error) {
+// CRLF line endings are translated to LF, and the detected line endings are
+// returned so they can be restored when the document is saved.
+func Load(path string, watcherPollInterval time.Duration) (*text.Tree, *Watcher, LineEndings, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("filepath.Abs: %w", err)
+		return nil, nil, LineEndingsLF, fmt.Errorf("filepath.Abs: %w", err)
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("os.Open: %w", err)
+		return nil, nil, LineEndingsLF, fmt.Errorf("os.Open: %w", err)
 	}
 	defer f.Close()
 
 	lastModifiedTime, size, err := lastModifiedTimeAndSize(f)
 	if err != nil {
-		return nil, nil, fmt.Errorf("lastModifiedTime: %w", err)
+		return nil, nil, LineEndingsLF, fmt.Errorf("lastModifiedTime: %w", err)
 	}
 
-	tree, checksum, err := readContentsAndChecksum(f)
+	tree, lineEndings, checksum, err := readContentsAndChecksum(f)
 	if err != nil {
-		return nil, nil, fmt.Errorf("readContentsAndChecksum: %w", err)
+		return nil, nil, LineEndingsLF, fmt.Errorf("readContentsAndChecksum: %w", err)
 	}
 
 	// POSIX files end with a single line feed to indicate the end of the file.
@@ -40,17 +42,19 @@ func Load(path string, watcherPollInterval time.Duration) (*text.Tree, *Watcher,
 
 	watcher := NewWatcherForExistingFile(watcherPollInterval, path, lastModifiedTime, size, checksum)
 
-	return tree, watcher, nil
+	return tree, watcher, lineEndings, nil
 }
 
-func readContentsAndChecksum(f *os.File) (*text.Tree, string, error) {
+func readContentsAndChecksum(f *os.File) (*text.Tree, LineEndings, string, error) {
+	// The checksum is calculated from the bytes on disk, before line endings
+	// are translated, so the watcher can compare it with the file's contents.
 	checksummer := NewChecksummer()
-	r := io.TeeReader(f, checksummer)
-	tree, err := text.NewTreeFromReader(r)
+	lr := newLfReader(io.TeeReader(f, checksummer))
+	tree, err := text.NewTreeFromReader(lr)
 	if err != nil {
-		return nil, "", fmt.Errorf("text.NewTreeFromReader: %w", err)
+		return nil, LineEndingsLF, "", fmt.Errorf("text.NewTreeFromReader: %w", err)
 	}
-	return tree, checksummer.Checksum(), nil
+	return tree, lr.LineEndings(), checksummer.Checksum(), nil
 }
 
 func lastModifiedTimeAndSize(f *os.File) (time.Time, int64, error) {

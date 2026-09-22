@@ -133,7 +133,14 @@ func makeRelPaths(paths []string) []string {
 }
 
 func assertPathsIgnoreOrder(t *testing.T, actual []string, expected []string) {
-	sort.Strings(expected)
+	// Expected paths are written with "/" separators, but ListDir returns
+	// paths with the separator used by the OS.
+	osExpected := make([]string, 0, len(expected))
+	for _, p := range expected {
+		osExpected = append(osExpected, filepath.FromSlash(p))
+	}
+
+	sort.Strings(osExpected)
 	sort.Strings(actual)
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, osExpected, actual)
 }

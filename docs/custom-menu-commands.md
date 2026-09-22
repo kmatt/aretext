@@ -20,7 +20,11 @@ You can add new menu commands by [editing the config file](configuration.md) to 
 
 After restarting the editor, the new command will be available in the command menu. Selecting the new command will launch a shell to execute the given command (in this case, echoing "hello world").
 
-The shell program can be configured by environment variables: `$ARETEXT_SHELL` has highest priority, then `$SHELL`. If neither environment variable is set, aretext uses `sh`.
+The shell program can be configured by environment variables: `$ARETEXT_SHELL` has highest priority, then `$SHELL`. If neither environment variable is set, aretext uses `sh` on Linux, macOS, and FreeBSD, and `powershell.exe` on Windows.
+
+The arguments used to pass the command to the shell are inferred from the shell program's name: `/c` for `cmd.exe`, `-NoProfile -NonInteractive -Command` for `powershell.exe` and `pwsh.exe`, and `-c` for everything else.
+
+Two consequences on Windows: PowerShell does not load your profile, so aliases and functions defined there are not available to menu commands (this matches `sh -c` on unix, which does not read shell startup files either). And PowerShell fails rather than prompting when a command is missing a required argument, so that a command cannot leave the editor waiting on a prompt you cannot see.
 
 The "mode" parameter controls how aretext handles the command's input and output. The table below shows the available modes:
 

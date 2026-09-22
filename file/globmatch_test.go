@@ -1,6 +1,7 @@
 package file
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -126,6 +127,47 @@ func TestGlobMatch(t *testing.T) {
 			pattern:       "**",
 			path:          "",
 			expectMatched: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			matched := GlobMatch(tc.pattern, tc.path)
+			assert.Equal(t, tc.expectMatched, matched)
+		})
+	}
+}
+
+func TestGlobMatchWindowsSeparators(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		// A backslash is a valid character in a file name on unix,
+		// so it is not treated as a path separator there.
+		t.Skip("Backslash is a path separator only on Windows")
+	}
+
+	testCases := []struct {
+		name          string
+		pattern       string
+		path          string
+		expectMatched bool
+	}{
+		{
+			name:          "backslash in both pattern and path",
+			pattern:       `**\*.go`,
+			path:          `C:\foo\bar\baz.go`,
+			expectMatched: true,
+		},
+		{
+			name:          "slash in pattern, backslash in path",
+			pattern:       "**/*.go",
+			path:          `C:\foo\bar\baz.go`,
+			expectMatched: true,
+		},
+		{
+			name:          "mismatched extension",
+			pattern:       "**/*.go",
+			path:          `C:\foo\bar\baz.txt`,
+			expectMatched: false,
 		},
 	}
 

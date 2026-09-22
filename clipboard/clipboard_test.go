@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -148,7 +149,19 @@ func TestPageIdForInputRune(t *testing.T) {
 	}
 }
 
+// requirePosixShell skips a test that runs POSIX shell commands.
+// The commands below use "cat" and output redirection, which do not mean the
+// same thing in PowerShell: "cat > file" is Get-Content with no path, so
+// PowerShell prompts for one instead of copying stdin.
+func requirePosixShell(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Test requires a POSIX shell")
+	}
+}
+
 func TestSystemClipboardSetAndGet(t *testing.T) {
+	requirePosixShell(t)
+
 	path := filepath.Join(t.TempDir(), "clipboard.txt")
 	copyCmd := fmt.Sprintf("cat > %q", path)
 	pasteCmd := fmt.Sprintf("cat %q", path)
@@ -166,6 +179,8 @@ func TestSystemClipboardSetAndGet(t *testing.T) {
 }
 
 func TestSystemClipboardLinewise(t *testing.T) {
+	requirePosixShell(t)
+
 	path := filepath.Join(t.TempDir(), "clipboard.txt")
 	copyCmd := fmt.Sprintf("cat > %q", path)
 	pasteCmd := fmt.Sprintf("cat %q", path)

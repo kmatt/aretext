@@ -236,10 +236,12 @@ func currentTimelineState(state *EditorState) file.TimelineState {
 
 func loadDocumentAndResetState(state *EditorState, path string, requireExists bool) (fileExists bool, err error) {
 	cfg := state.configRuleSet.ConfigForPath(path)
-	tree, watcher, err := file.Load(path, file.DefaultPollInterval)
+	tree, watcher, lineEndings, err := file.Load(path, file.DefaultPollInterval)
 	if errors.Is(err, fs.ErrNotExist) && !requireExists {
 		tree = text.NewTree()
 		watcher = file.NewWatcherForNewFile(file.DefaultPollInterval, path)
+		// A new file has no line endings to detect, so use the POSIX convention.
+		lineEndings = file.LineEndingsLF
 	} else if err != nil {
 		return false, err
 	} else {
@@ -265,6 +267,7 @@ func loadDocumentAndResetState(state *EditorState, path string, requireExists bo
 	state.documentBuffer.showLineNum = cfg.ShowLineNumbers
 	state.documentBuffer.lineNumberMode = config.LineNumberMode(cfg.LineNumberMode)
 	state.documentBuffer.lineWrapAllowCharBreaks = bool(cfg.LineWrap == config.LineWrapCharacter)
+	state.documentBuffer.lineEndings = lineEndings
 	state.documentBuffer.undoLog = undo.NewLog()
 	state.clipboard.SetSystemClipboard(systemClipboardFromConfig(cfg))
 	state.menu = &MenuState{}
@@ -372,7 +375,8 @@ func reportLoadError(state *EditorState, err error, path string) {
 func SaveDocument(state *EditorState) {
 	path := state.fileWatcher.Path()
 	tree := state.documentBuffer.textTree
-	newWatcher, err := file.Save(path, tree, file.DefaultPollInterval)
+	lineEndings := state.documentBuffer.lineEndings
+	newWatcher, err := file.Save(path, tree, lineEndings, file.DefaultPollInterval)
 	if err != nil {
 		reportSaveError(state, err, path)
 		return

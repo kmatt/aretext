@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -226,15 +227,16 @@ func TestShowFileMenu(t *testing.T) {
 		items, selectedIdx := state.Menu().SearchResults()
 		require.Equal(t, 3, len(items))
 		assert.Equal(t, 0, selectedIdx)
-		assert.Equal(t, "a/b/bar.txt", items[0].Name)
-		assert.Equal(t, "a/foo.txt", items[1].Name)
-		assert.Equal(t, "c/baz.txt", items[2].Name)
+		assert.Equal(t, filepath.FromSlash("a/b/bar.txt"), items[0].Name)
+		assert.Equal(t, filepath.FromSlash("a/foo.txt"), items[1].Name)
+		assert.Equal(t, filepath.FromSlash("c/baz.txt"), items[2].Name)
 
 		// Execute the second item and verify that it opens the file.
+		fooPath := filepath.FromSlash("a/foo.txt")
 		MoveMenuSelection(state, 1)
 		ExecuteSelectedMenuItem(state)
-		assert.Equal(t, "Opened a/foo.txt", state.StatusMsg().Text)
-		assert.Equal(t, "a/foo.txt content", state.DocumentBuffer().TextTree().String())
+		assert.Equal(t, fmt.Sprintf("Opened %s", fooPath), state.StatusMsg().Text)
+		assert.Equal(t, fmt.Sprintf("%s content", fooPath), state.DocumentBuffer().TextTree().String())
 	})
 }
 
@@ -276,9 +278,9 @@ func TestShowChildDirsMenu(t *testing.T) {
 		items, selectedIdx := state.Menu().SearchResults()
 		require.Equal(t, 3, len(items))
 		assert.Equal(t, 0, selectedIdx)
-		assert.Equal(t, "./a", items[0].Name)
-		assert.Equal(t, "./a/b", items[1].Name)
-		assert.Equal(t, "./c", items[2].Name)
+		assert.Equal(t, filepath.FromSlash("./a"), items[0].Name)
+		assert.Equal(t, filepath.FromSlash("./a/b"), items[1].Name)
+		assert.Equal(t, filepath.FromSlash("./c"), items[2].Name)
 
 		// Execute the second item and verify that the working directory changed.
 		MoveMenuSelection(state, 1)
@@ -333,7 +335,9 @@ func withTempDirPaths(t *testing.T, paths []string, f func(string)) {
 	require.NoError(t, err)
 
 	// Create paths in the tempdir.
+	// Paths are written with "/" separators, so convert them for the current OS.
 	for _, p := range paths {
+		p = filepath.FromSlash(p)
 		err = os.MkdirAll(filepath.Dir(p), 0755)
 		require.NoError(t, err)
 		err = os.WriteFile(p, []byte(p+" content"), 0644)

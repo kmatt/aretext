@@ -7,6 +7,7 @@ Supported Platforms
 -	Linux
 -	macOS
 -	FreeBSD
+-	Windows 10 and later (build from source)
 
 Official Binaries
 -----------------
@@ -60,6 +61,26 @@ This will install aretext in `$(go env GOPATH)/bin`, which you can add to your `
 ```
 export PATH=$PATH:$(go env GOPATH)/bin
 ```
+
+### Windows
+
+There are no official Windows binaries yet, so build from source. In PowerShell:
+
+```
+git clone https://github.com/aretext/aretext.git
+cd aretext
+go install
+```
+
+This installs `aretext.exe` in `$(go env GOPATH)\bin`, which you can add to your `Path` environment variable.
+
+Alternatively, build `aretext.exe` in the repository directory without installing it:
+
+```
+go build -o aretext.exe
+```
+
+Run aretext in [Windows Terminal](https://learn.microsoft.com/en-us/windows/terminal/), which supports the terminal features aretext needs. Shell commands run in PowerShell by default; see [Custom Menu Commands](custom-menu-commands.md) to change this.
 
 Packages
 --------

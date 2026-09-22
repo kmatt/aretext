@@ -9,7 +9,21 @@ Aretext is designed to integrate seamlessly with a terminal-based workflow. This
 
 -	It automatically reloads files that change on disk (unless there are unsaved changes). For example, if you run a code formatting tool that changes a file, aretext will automatically reload it.
 
-Aretext currently supports only UTF-8 encoded documents with Unix-style (LF) line endings.
+Aretext currently supports only UTF-8 encoded documents.
+
+Line endings
+------------
+
+Aretext detects a document's line endings when it opens the file and restores them when it saves:
+
+-	A file whose first line ends with a line feed ("\n") is saved with Unix-style (LF) line endings.
+-	A file whose first line ends with a carriage return and line feed ("\r\n") is saved with Windows-style (CRLF) line endings.
+
+Within the editor, every line break is a single line feed regardless of the convention used on disk, so a carriage return is never displayed as part of a line. A file with mixed line endings is normalized to the convention of its first line the next time you save it.
+
+A carriage return that is not immediately followed by a line feed is not a line ending, so aretext keeps it as document content. Classic Mac-style (CR) line endings are not recognized.
+
+New documents, and documents with no line endings at all, are saved with Unix-style (LF) line endings.
 
 Fuzzy file search
 -----------------

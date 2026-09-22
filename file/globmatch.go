@@ -57,9 +57,15 @@ func GlobMatch(pattern, name string) bool {
 	return true
 }
 
-// splitPathComponent splits a path into components using the OS-specific separator (e.g. "/" for unix).
+// splitPathComponent splits a path into components.
+// On Windows, both "/" and "\" are recognized as separators so that patterns can be
+// written either way. On unix, only "/" is a separator because a backslash is a valid
+// character in a file name.
 func splitPathComponents(path string) []string {
-	return strings.Split(path, string(os.PathSeparator))
+	if os.PathSeparator != '/' {
+		path = strings.ReplaceAll(path, string(os.PathSeparator), "/")
+	}
+	return strings.Split(path, "/")
 }
 
 // componentsMatch checks if a component in the pattern matches a component in the path.

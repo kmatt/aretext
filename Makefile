@@ -6,6 +6,9 @@ GO_ARCH ?= $(shell go env GOARCH)
 GO_BUILD_FLAGS ?=
 GO_LDFLAGS := -ldflags="-X 'main.version=$(VERSION)'"
 GO_OUTPUT := aretext
+ifeq ($(GO_OS),windows)
+GO_OUTPUT := aretext.exe
+endif
 
 RELEASE_PLATFORMS := linux_amd64 linux_arm64 darwin_arm64 freebsd_amd64 freebsd_arm64
 RELEASE_DIR := dist
@@ -73,6 +76,6 @@ bench:
 	go test ./... -bench=.
 
 clean:
-	rm -rf aretext
+	rm -rf aretext aretext.exe
 	rm -rf dist
 	go clean ./...

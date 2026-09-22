@@ -62,7 +62,7 @@ func TestWatcherFromLoadExistingFile(t *testing.T) {
 	filePath := createTestFile(t, "abcd")
 
 	// Load the file and start a watcher.
-	_, watcher, err := Load(filePath, testWatcherPollInterval)
+	_, watcher, _, err := Load(filePath, testWatcherPollInterval)
 	require.NoError(t, err)
 	defer watcher.Stop()
 

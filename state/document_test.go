@@ -13,6 +13,7 @@ import (
 
 	"github.com/aretext/aretext/clipboard"
 	"github.com/aretext/aretext/config"
+	"github.com/aretext/aretext/file"
 	"github.com/aretext/aretext/syntax"
 )
 
@@ -323,6 +324,66 @@ func TestSaveDocument(t *testing.T) {
 	contents, err := os.ReadFile(path)
 	require.NoError(t, err)
 	assert.Equal(t, "x\n", string(contents))
+}
+
+func TestSaveDocumentPreservesCrlfLineEndings(t *testing.T) {
+	state := NewEditorState(100, 100, nil, nil)
+	defer state.fileWatcher.Stop()
+
+	// Load a document that uses Windows line endings.
+	path, cleanup := createTestFile(t, "first\r\nsecond\r\n")
+	defer cleanup()
+	LoadDocument(state, path, true, startOfDocLocator)
+
+	// The carriage returns are not part of the document.
+	assert.Equal(t, "first\nsecond", state.documentBuffer.textTree.String())
+
+	// Insert a new line, then save.
+	MoveCursor(state, func(p LocatorParams) uint64 { return p.TextTree.NumChars() })
+	InsertRune(state, '\n')
+	InsertRune(state, 'x')
+	SaveDocument(state)
+	require.Equal(t, StatusMsgStyleSuccess, state.statusMsg.Style)
+
+	// The original line endings are restored on disk, including for the new line.
+	contents, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "first\r\nsecond\r\nx\r\n", string(contents))
+}
+
+func TestSaveDocumentNewFileUsesLfLineEndings(t *testing.T) {
+	state := NewEditorState(100, 100, nil, nil)
+	defer state.fileWatcher.Stop()
+
+	path := filepath.Join(t.TempDir(), "test.txt")
+	require.NoError(t, NewDocument(state, path))
+
+	InsertRune(state, 'a')
+	InsertRune(state, '\n')
+	InsertRune(state, 'b')
+	SaveDocument(state)
+	require.Equal(t, StatusMsgStyleSuccess, state.statusMsg.Style)
+
+	contents, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "a\nb\n", string(contents))
+}
+
+func TestReloadDocumentDetectsChangedLineEndings(t *testing.T) {
+	state := NewEditorState(100, 100, nil, nil)
+	defer state.fileWatcher.Stop()
+
+	path, cleanup := createTestFile(t, "first\nsecond\n")
+	defer cleanup()
+	LoadDocument(state, path, true, startOfDocLocator)
+	require.Equal(t, file.LineEndingsLF, state.documentBuffer.lineEndings)
+
+	// Rewrite the file with Windows line endings, then reload.
+	require.NoError(t, os.WriteFile(path, []byte("first\r\nsecond\r\n"), 0644))
+	ReloadDocument(state)
+
+	assert.Equal(t, file.LineEndingsCRLF, state.documentBuffer.lineEndings)
+	assert.Equal(t, "first\nsecond", state.documentBuffer.textTree.String())
 }
 
 func TestSaveDocumentIfUnsavedChanges(t *testing.T) {

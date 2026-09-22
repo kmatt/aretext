@@ -175,6 +175,7 @@ type BufferState struct {
 	autoIndent              bool
 	showLineNum             bool
 	lineWrapAllowCharBreaks bool
+	lineEndings             file.LineEndings
 }
 
 func (s *BufferState) TextTree() *text.Tree {

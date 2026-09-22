@@ -17,8 +17,18 @@ This document lists every configuration option in aretext.
 | lineWrap        | enum             | Control soft line wrapping behavior. Either "character" for breaking at any character boundary or "word" to break only at word boundaries.                     |
 | menuCommands    | array of objects | Additional menu items that can run arbitrary shell commands. See [Menu Command Object](#menu-command-object) below for the expected fields.                    |
 | systemClipboard | object           | Commands for integrating with the system clipboard. See [System Clipboard](system-clipboard.md) and [System Clipboard Object](#system-clipboard-object) below. |
-| hidePatterns    | array of strings | Glob patterns matching files or directories to hide from file search. Patterns are matched against absolute paths.                                             |
+| hidePatterns    | array of strings | Glob patterns matching files or directories to hide from file search. Patterns are matched against absolute paths. See [Glob Patterns](#glob-patterns) below.  |
 | styles          | dict             | Styles control how UI elements are displayed. See [Styles](#styles) below for details.                                                                         |
+
+Glob Patterns
+-------------
+
+A rule's `pattern` and the `hidePatterns` option are glob patterns matched against a file path.
+
+-	`*` matches any part of a single path component.
+-	`**` matches any number of path components.
+
+Use `/` to separate components in a pattern. On Windows, both `/` and `\` are accepted, so patterns like `**/*.json` work on every platform.
 
 Syntax Languages
 ----------------

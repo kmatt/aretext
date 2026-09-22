@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/aretext/aretext/config"
+	"github.com/aretext/aretext/file"
 )
 
 //go:embed default-config.yaml
@@ -76,7 +77,17 @@ func saveDefaultConfig(path string) error {
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
 		return fmt.Errorf("os.MkdirAll: %w", err)
 	}
-	if err := os.WriteFile(path, DefaultConfigYaml, 0644); err != nil {
+
+	// The config file belongs to the machine it is written on, not to a
+	// repository shared across platforms, so use the native line endings.
+	// This also normalizes the embedded config, which picks up CRLF line
+	// endings when the repository is checked out with git's autocrlf enabled.
+	data, err := file.NormalizeLineEndings(DefaultConfigYaml, file.PlatformLineEndings)
+	if err != nil {
+		return fmt.Errorf("file.NormalizeLineEndings: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
 		return fmt.Errorf("os.WriteFile: %w", err)
 	}
 	return nil
